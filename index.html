@@ -1,0 +1,1536 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta property="og:title" content="BP Off-line">
+    <meta property="og:description" content="Calcule seu soldo, FUSMA, adicionais e planeje seu orçamento mensal com privacidade total.">
+    <meta property="og:type" content="website">
+    <title>BP Off-line</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <style>
+        :root {
+            --bg-body: #1c1c1e; 
+            --card-bg: #ffffff; 
+            --primary-text: #0f172a; 
+            --secondary-text: #475569; 
+            --muted-text: #94a3b8; 
+            
+            --border-color: #cbd5e1; 
+            --input-bg: #f8fafc; 
+            
+            --accent-blue: #0284c7; 
+            --red-text: #dc2626; 
+            --green-text: #16a34a; 
+        }
+
+        * { box-sizing: border-box; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
+        
+        body { 
+            background-color: var(--bg-body); 
+            background-image: 
+                radial-gradient(circle at 15% 20%, rgba(2, 132, 199, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 85% 80%, rgba(234, 88, 12, 0.12) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(22, 163, 74, 0.05) 0%, transparent 60%);
+            background-attachment: fixed;
+            color: var(--primary-text); display: flex; flex-direction: column; align-items: center; overflow: hidden; height: 100dvh; 
+        }
+        
+        .progress-dots { display: flex; justify-content: center; gap: 6px; margin: 10px 0 5px 0; flex-shrink: 0; width: 100%; }
+        .dot { width: 6px; height: 6px; background-color: rgba(255,255,255,0.2); border-radius: 50%; transition: all 0.3s; }
+        .dot.active { background-color: #38bdf8; width: 16px; border-radius: 4px; box-shadow: 0 0 8px rgba(56,189,248,0.5);}
+
+        .app-container { width: 100%; max-width: 600px; position: relative; display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+        
+        .wizard-track { display: flex; width: 100%; height: 100%; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+        .wizard-track::-webkit-scrollbar { display: none; }
+        .wizard-step { width: 100%; height: max-content; flex-shrink: 0; scroll-snap-align: center; padding: 0px 12px 85px 12px; display: flex; flex-direction: column; }
+
+        .header-app { display: flex; align-items: center; justify-content: flex-start; gap: 10px; padding: 5px 0 10px 0; width: 100%; position: relative; flex-shrink: 0;}
+        .logo-box { background: linear-gradient(135deg, #0ea5e9, #0284c7); padding: 8px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; }
+        .logo-box svg { width: 20px; height: 20px; fill: #ffffff; }
+        .title-box h1 { color: #ffffff; font-size: 1.25rem; font-weight: 800; letter-spacing: -0.5px; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        .title-box h1 em { font-style: normal; color: #38bdf8; }
+
+        .auto-save-badge { position: absolute; right: 0px; top: 10px; font-size: 0.65rem; background: rgba(22, 163, 74, 0.2); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.3); padding: 3px 8px; border-radius: 10px; font-weight: bold; opacity: 0; transition: 0.3s; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);}
+        .auto-save-badge.saving { background: rgba(234, 179, 8, 0.2); color: #fde047; border-color: rgba(253, 224, 71, 0.3); opacity: 1;}
+
+        .card-inner { 
+            background: rgba(255, 255, 255, 0.92); 
+            backdrop-filter: blur(16px) saturate(120%); 
+            -webkit-backdrop-filter: blur(16px) saturate(120%);
+            border-radius: 16px; padding: 12px 15px; 
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2), inset 0 1px 1px rgba(255,255,255,0.6); 
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            margin-bottom: 12px; flex-shrink: 0; 
+        }
+        .card-inner.result-card { padding: 10px 12px; margin-bottom: 6px;} 
+        
+        h2 { font-size: 1.05rem; margin-bottom: 10px; color: var(--primary-text); font-weight: 800; letter-spacing: -0.5px; border-bottom: 2px solid rgba(0,0,0,0.05); padding-bottom: 6px;}
+        h3 { font-size: 0.95rem; color: var(--primary-text); margin: 16px 0 8px 0; font-weight: 700; border-bottom: 1px dashed var(--border-color); padding-bottom: 4px; letter-spacing: -0.3px;}
+        .card-inner h3:first-of-type { margin-top: 5px; } 
+        
+        .grid-1 { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+        
+        .grid-center-4 { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; width: 100%; margin-bottom: 6px; }
+        .grid-center-4 .res-box { flex: 0 0 calc(25% - 3px); padding: 6px 1px; display: flex; flex-direction: column; align-items: center; justify-content: center;}
+        .grid-center-4 .res-box label { font-size: 0.45rem; font-weight: 700; margin-bottom: 2px; text-transform: uppercase; width: 100%; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--secondary-text);}
+        .grid-center-4 .res-box span { font-size: 0.72rem; }
+
+        .grid-center-3 { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; width: 100%; margin-bottom: 4px; }
+        .grid-center-3 .res-box { flex: 0 0 calc(33.333% - 4px); padding: 6px 2px; display: flex; flex-direction: column; align-items: center; justify-content: center;}
+        .grid-center-3 .res-box label { font-size: 0.5rem; font-weight: 700; margin-bottom: 3px; text-transform: uppercase; width: 100%; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--secondary-text);}
+        .grid-center-3 .res-box span { font-size: 0.75rem; }
+
+        .grid-full { grid-column: span 2; }
+        
+        .grid-totais { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 6px 0; width: 100%; }
+        .grid-totais .caixa-total { margin: 0; padding: 6px 10px; flex-direction: column; align-items: flex-start; justify-content: center; border-radius: 10px;}
+        .grid-totais .caixa-total span:first-child { font-size: 0.55rem; font-weight: 700; text-transform: uppercase; color: var(--secondary-text); margin-bottom: 2px;}
+        .grid-totais .caixa-total span:last-child { font-size: 0.95rem; font-weight: 800;}
+
+        .form-group { width: 100%; display: flex; flex-direction: column; justify-content: flex-end;}
+        label { font-weight: 600; margin-bottom: 4px; color: var(--secondary-text); font-size: 0.75rem; line-height: 1.1; }
+        
+        /* Modificador para Inputs Renomeáveis */
+        .editable-label { border-bottom: 1px dashed rgba(0,0,0,0.2); cursor: text; outline: none; transition: 0.2s; display: inline-block;}
+        .editable-label:focus { color: var(--accent-blue); border-bottom-color: var(--accent-blue); background: rgba(2, 132, 199, 0.05);}
+
+        select, input { 
+            width: 100%; padding: 0 10px; border-radius: 8px; font-size: 0.9rem; height: 38px; color: var(--primary-text); transition: 0.2s ease; outline: none; appearance: auto;
+            background-color: rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.03);
+        }
+        select:focus, input:focus { 
+            background-color: rgba(255, 255, 255, 0.95);
+            border-color: var(--accent-blue); 
+            box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.2); 
+        }
+        
+        .active-azul { color: var(--accent-blue) !important; font-weight: 700 !important; }
+        .active-vermelho { color: var(--red-text) !important; font-weight: 700 !important; }
+        .active-verde { color: var(--green-text) !important; font-weight: 700 !important; }
+        .is-zero { color: var(--muted-text) !important; font-weight: 400 !important; } 
+        
+        input::placeholder { font-size: 0.7rem; color: var(--muted-text); font-weight: 400; }
+        .dinheiro, .dinheiro_opcional { text-align: right; font-family: monospace; font-size: 0.95rem; }
+        
+        .res-box { 
+            background: rgba(255, 255, 255, 0.5); 
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            border-radius: 8px; display: flex; flex-direction: column; justify-content: center; text-align: center;
+        }
+        .res-box span { font-weight: 800; color: var(--accent-blue); } 
+        .res-box.desconto span { color: var(--red-text); }
+        
+        .linha { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; font-size: 0.75rem; border-bottom: 1px dashed var(--border-color); padding-bottom: 4px; }
+        .linha:last-child { border-bottom: none; }
+        .linha span:first-child { font-weight: 600; color: var(--secondary-text); flex: 1; padding-right: 5px; }
+        .linha span:last-child { font-weight: 700; text-align: right; color: var(--primary-text); white-space: nowrap; flex-shrink: 0; }
+        .linha.desconto span:last-child { color: var(--red-text); }
+        
+        .caixa-total { padding: 10px 14px; border-radius: 12px; margin: 4px 0; display: flex; justify-content: space-between; align-items: center; font-size: 0.95rem; font-weight: 800; }
+        .bruto { background-color: rgba(224, 242, 254, 0.7); border: 1px solid rgba(186, 230, 253, 0.8); color: var(--accent-blue); }
+        .subtotal { background-color: rgba(248, 250, 252, 0.7); border: 1px solid rgba(226, 232, 240, 0.8); color: var(--primary-text); }
+        .liquido { background: linear-gradient(135deg, #10b981, #15803d); border: none; color: #ffffff; font-size: 1.05rem; padding: 12px 14px; box-shadow: 0 4px 10px rgba(22, 163, 74, 0.3);}
+        .liquido.negativo { background: linear-gradient(135deg, #ef4444, #b91c1c); box-shadow: 0 4px 10px rgba(220, 38, 38, 0.3); }
+
+        .caixa-override { background-color: rgba(248, 250, 252, 0.6); padding: 10px; border-radius: 12px; border: 1px solid var(--border-color); margin-top: 10px; }
+        .caixa-override label { color: var(--secondary-text); }
+        .caixa-override input { border-color: rgba(255,255,255,0.8); background-color: rgba(255,255,255,0.7); flex:1;}
+        .btn-clear { background: transparent; border: 1px solid var(--border-color); color: var(--secondary-text); border-radius: 8px; padding: 0 10px; font-weight: 600; cursor: pointer; transition: 0.2s;}
+        .btn-clear:active { background: rgba(255,255,255,0.5); }
+
+        /* Dashboard Visual Ultra-Compacto Horizontal */
+        .donut-chart { width: 70px; height: 70px; flex-shrink: 0; border-radius: 50%; background: conic-gradient(rgba(0,0,0,0.05) 0 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.08); transition: background 0.4s ease;}
+        .donut-inner { width: 54px; height: 54px; background: rgba(255, 255, 255, 0.95); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); backdrop-filter: blur(4px);}
+        .progress-bar-container { width: 100%; height: 6px; background: rgba(0,0,0,0.06); border-radius: 10px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);}
+        .progress-fill { height: 100%; border-radius: 10px; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.5s; width: 0%; background: #16a34a; }
+
+        @keyframes blinkInst {
+            0%, 100% { border-color: rgba(255, 255, 255, 0.9); }
+            50% { border-color: transparent; }
+        }
+        
+        .feedback-strip { 
+            display: flex; justify-content: center; align-items: center; gap: 6px; 
+            background: linear-gradient(135deg, #eab308, #ea580c); 
+            color: #ffffff; 
+            border: 1.5px dashed rgba(255, 255, 255, 0.9);
+            padding: 8px 16px; border-radius: 100px; 
+            font-size: 0.7rem; font-weight: 700; 
+            text-decoration: none; text-align: center; 
+            box-shadow: 0 4px 12px rgba(234, 88, 12, 0.3); 
+            margin: 10px auto 8px auto; width: max-content; max-width: 95%; 
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
+            transition: 0.2s; animation: blinkInst 1.8s infinite;
+        }
+        .feedback-strip:active { transform: scale(0.95); animation: none; border-color: #ffffff;}
+        
+        .footer-credit { text-align: center; font-size: 0.7rem; color: #94a3b8; margin-top: 10px; font-weight: 600; padding-bottom: 15px; }
+
+        .action-group { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.05);}
+        .btn-large { width: 100%; padding: 10px; border-radius: 12px; font-weight: 800; font-size: 0.9rem; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; text-transform: uppercase; transition: 0.2s;}
+        
+        .btn-pdf { background: linear-gradient(135deg, #f97316, #ea580c); color: white; box-shadow: 0 4px 10px rgba(234, 88, 12, 0.3); }
+        .btn-pdf:active { transform: scale(0.98); filter: brightness(0.9); }
+        
+        .btn-budget { background: linear-gradient(135deg, #8b5cf6, #6d28d9); color: white; box-shadow: 0 4px 10px rgba(109, 40, 217, 0.3); }
+        .btn-budget:active { transform: scale(0.98); filter: brightness(0.9); }
+        
+        .btn-instruction { 
+            background: linear-gradient(135deg, #eab308, #ea580c); 
+            color: #ffffff; padding: 12px; margin-top: 15px; 
+            box-shadow: 0 4px 10px rgba(234, 88, 12, 0.3); 
+            border: 1.5px dashed rgba(255, 255, 255, 0.9);
+            animation: blinkInst 1.5s infinite;
+        }
+        .btn-instruction:active { transform: scale(0.98); filter: brightness(0.9); animation: none; border-color: #ffffff;}
+
+        .bottom-nav { position: fixed; bottom: 15px; left: 12px; right: 12px; max-width: 576px; margin: 0 auto; background: transparent; display: flex; justify-content: space-between; align-items: center; z-index: 100; gap: 10px; padding: 0;}
+        .nav-btn { flex: 1; padding: 14px 0; border-radius: 14px; font-weight: 800; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; text-transform: uppercase; color: white; box-shadow: 0 8px 20px rgba(0,0,0,0.4); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);}
+        .nav-btn:active { transform: scale(0.95); }
+        
+        .btn-prev { background: linear-gradient(135deg, rgba(100, 116, 139, 0.9), rgba(71, 85, 105, 0.9)); }
+        .btn-reports { background: linear-gradient(135deg, rgba(59, 130, 246, 0.9), rgba(29, 78, 216, 0.9)); }
+        .btn-next { background: linear-gradient(135deg, rgba(16, 185, 129, 0.9), rgba(5, 150, 105, 0.9)); }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); z-index: 999; justify-content: center; align-items: center; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);}
+        .modal-content { background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(20px) saturate(120%); -webkit-backdrop-filter: blur(20px) saturate(120%); width: 90%; max-width: 380px; border-radius: 24px; padding: 20px; border: 1px solid rgba(255,255,255,0.5); box-shadow: 0 20px 40px rgba(0,0,0,0.4); animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); position: relative; display: flex; flex-direction: column;}
+        @keyframes popIn { from { transform: translateY(20px) scale(0.95); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+        
+        .modal-content h3 { margin: 0 0 5px 0; color: var(--primary-text); font-size: 1.15rem; font-weight: 800; text-align: center;}
+        .modal-content p { font-size: 0.8rem; color: var(--secondary-text); margin-bottom: 15px; text-align: center;}
+        
+        .modal-body { display: flex; gap: 10px; margin-bottom: 20px; }
+        .modal-actions { display: flex; gap: 10px; }
+        .btn-cancel { flex: 1; padding: 12px; border-radius: 10px; border: none; background: rgba(241, 245, 249, 0.8); color: var(--primary-text); font-weight: 700; cursor: pointer; font-size: 0.9rem;}
+        .btn-confirm { flex: 1; padding: 12px; border-radius: 10px; border: none; background: var(--accent-blue); color: white; font-weight: 700; cursor: pointer; font-size: 0.9rem;}
+        
+        #instTrack { display: flex; width: 100%; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; -webkit-overflow-scrolling: touch; margin-bottom: 10px; padding-bottom: 5px;}
+        #instTrack::-webkit-scrollbar { display: none; }
+        .inst-card { width: 100%; flex-shrink: 0; scroll-snap-align: center; padding: 0 5px; max-height: 55vh; overflow-y: auto; }
+        
+        .instruction-text { font-size: 0.85rem; line-height: 1.45; color: var(--secondary-text); text-align: justify; }
+        .instruction-text h4 { color: var(--primary-text); margin-top: 5px; margin-bottom: 10px; font-size: 1rem; border-bottom: none; font-weight: 800; text-align: center;}
+        .instruction-text ul { padding-left: 15px; margin-bottom: 10px; }
+        .instruction-text li { margin-bottom: 8px; }
+        
+        .nav-inst-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); color: var(--primary-text); border: 1px solid rgba(255,255,255,0.8); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 10; cursor: pointer; transition: 0.2s; }
+        .nav-inst-btn:active { background: rgba(255, 255, 255, 0.9); transform: translateY(-50%) scale(0.92);}
+        #btnInstPrev { left: -10px; }
+        #btnInstNext { right: -10px; }
+        .nav-inst-btn svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+
+        .btn-close-inst { background: rgba(254, 242, 242, 0.8); color: var(--red-text); border: 1px solid rgba(254, 242, 242, 1); padding: 14px; border-radius: 12px; font-weight: 800; cursor: pointer; font-size: 0.95rem; width: 100%; margin-top: auto; transition: 0.2s;}
+        .btn-close-inst:active { filter: brightness(0.95); }
+
+        .aba-relatorio-btn { flex:1; padding:10px; border-radius:10px; border:none; font-weight:700; cursor:pointer; font-size:0.85rem; transition:0.2s; }
+        .aba-ativa { background: var(--primary-text); color: white; }
+        .aba-inativa { background: rgba(248, 250, 252, 0.6); color: var(--secondary-text); }
+        .item-relatorio { border: 1px solid rgba(255,255,255,0.6); border-radius: 12px; padding: 12px; display:flex; justify-content:space-between; align-items:center; background: rgba(255,255,255,0.6); margin-bottom: 8px;}
+
+        /* ESTILOS DE IMPRESSÃO COMPRIMIDOS PARA CABER NO IOS A4 */
+        #printZone { display: none; width: 100%; background: white; color: black; padding: 20px; font-family: 'Inter', sans-serif; }
+        #printZone .print-header { text-align: center; margin-bottom: 15px; border-bottom: 2px solid #0f172a; padding-bottom: 8px; }
+        #printZone .print-header h1 { font-size: 1.3rem; color: #0f172a; font-weight: 800; margin-bottom: 4px; }
+        #printZone .print-header p { font-size: 0.7rem; color: #64748b; margin-top: 2px; }
+        #printZone .print-meta { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 15px; background: #f8fafc; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; }
+        #printZone .print-section-title { font-size: 0.95rem; color: #0f172a; margin: 15px 0 6px 0; border-bottom: 1px solid #0f172a; padding-bottom: 4px; font-weight: 800;}
+        #printZone .print-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+        #printZone .print-table th, #printZone .print-table td { padding: 6px 8px; border-bottom: 1px solid #e2e8f0; text-align: left; font-size: 0.8rem; }
+        #printZone .print-table th { background-color: #f1f5f9; font-weight: bold; color: #0f172a; }
+        #printZone .print-table td.val { text-align: right; font-family: monospace; font-size: 0.9rem; }
+        #printZone .text-success { color: #0284c7; font-weight: bold; }
+        #printZone .text-danger { color: #dc2626; font-weight: bold; }
+        #printZone .print-footer-total { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding: 12px; border-radius: 8px; font-size: 1.1rem; font-weight: bold; border: 2px solid #cbd5e1; }
+        #printZone .print-footer-total.pos { background-color: #e0f2fe; border-color: #bae6fd; color: #0284c7; }
+        #printZone .print-footer-total.neg { background-color: #fef2f2; border-color: #fecaca; color: #dc2626; }
+        
+        @media print {
+            @page { margin: 10mm; } /* Força margens menores no sistema de impressão do iOS/Android */
+            body { background: white; color: black; overflow: visible !important; height: auto !important; }
+            .app-container, .bottom-nav, .progress-dots, .modal-overlay { display: none !important; }
+            #printZone { display: block !important; width: 100%; padding: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Zona de renderização do PDF -->
+<div id="printZone"></div>
+
+<!-- Modal Geração PDF -->
+<div id="modalPDF" class="modal-overlay">
+    <div class="modal-content">
+        <h3>📄 Período do Relatório</h3>
+        <p>Referente a qual mês e ano?</p>
+        <div class="modal-body">
+            <div class="form-group" style="flex: 2;">
+                <label>Mês:</label>
+                <select id="modalMes">
+                    <option value="Janeiro">Janeiro</option><option value="Fevereiro">Fevereiro</option><option value="Março">Março</option>
+                    <option value="Abril">Abril</option><option value="Maio">Maio</option><option value="Junho">Junho</option>
+                    <option value="Julho">Julho</option><option value="Agosto">Agosto</option><option value="Setembro">Setembro</option>
+                    <option value="Outubro">Outubro</option><option value="Novembro">Novembro</option><option value="Dezembro">Dezembro</option>
+                </select>
+            </div>
+            <div class="form-group" style="flex: 1.5;">
+                <label>Ano:</label>
+                <select id="modalAno"></select>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="fecharModalPDF()">Cancelar</button>
+            <button id="btnConfirmarPDF" class="btn-confirm" onclick="confirmarPDF()">Gerar PDF</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Pasta Relatórios -->
+<div id="modalRelatorios" class="modal-overlay">
+    <div class="modal-content" style="max-height: 85vh;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+            <h3 style="margin:0;">📂 Relatórios Salvos</h3>
+            <button onclick="fecharRelatorios()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color: var(--muted-text);">×</button>
+        </div>
+        <div style="display:flex; gap:10px; margin-bottom: 15px;">
+            <button id="tab-bp" class="aba-relatorio-btn aba-ativa" onclick="mudarAbaRelatorio('bp')">📄 BP's</button>
+            <button id="tab-orc" class="aba-relatorio-btn aba-inativa" onclick="mudarAbaRelatorio('orcamento')">📊 Orçamentos</button>
+        </div>
+        <div id="lista-relatorios" style="display:flex; flex-direction:column; overflow-y:auto; padding-right:5px;"></div>
+    </div>
+</div>
+
+<!-- Modal Instruções (Cards Flutuantes e Deslizantes) -->
+<div id="modalInstrucoes" class="modal-overlay">
+    <div class="modal-content" style="padding: 20px 15px;">
+        
+        <button id="btnInstPrev" class="nav-inst-btn" onclick="mudarInstrucao(-1)">
+            <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        </button>
+        <button id="btnInstNext" class="nav-inst-btn" onclick="mudarInstrucao(1)">
+            <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+
+        <h3 style="margin-bottom: 5px;">Guia de Preenchimento</h3>
+        
+        <div class="progress-dots" style="margin-top: 0px; margin-bottom: 10px;">
+            <div class="dot inst-dot active"></div>
+            <div class="dot inst-dot"></div>
+            <div class="dot inst-dot"></div>
+        </div>
+
+        <div id="instTrack">
+            
+            <!-- CARD 1 -->
+            <div class="inst-card">
+                <div class="instruction-text">
+                    <h4>1. Dados de Carreira</h4>
+                    <ul>
+                        <li><strong>Posto/Graduação Atual:</strong> Campo obrigatório. É ele que define o valor da tabela do seu Soldo Base.</li>
+                        <li><strong>Adicional de Habilitação:</strong> Selecione a porcentagem do seu curso. <em>Exemplos que se enquadram nas categorias (podem existir outros):</em><br>
+                            - <strong>12% (Formação):</strong> Escola Naval, C-FMN, C-FSD, C-FSG, etc.<br>
+                            - <strong>27% (Especialização):</strong> C-Espc (Oficiais e Cabos), etc.<br>
+                            - <strong>45% (Aperfeiçoamento):</strong> C-AP (Oficiais e Sargentos), etc.<br>
+                            - <strong>68% (Altos Estudos II):</strong> C-ApA, subespecializações, etc.<br>
+                            - <strong>73% (Altos Estudos I):</strong> C-EMOS, C-ASEMSO, C-Sup, etc.
+                        </li>
+                        <li><strong>Adic. de Disponibilidade:</strong> Coloque o percentual incorporado. <em>Atenção:</em> Sargentos do Quadro Especial (QE) possuem percentuais específicos. Se você foi promovido a Oficial mas possuía um adicional maior na graduação anterior, você <strong>incorpora</strong> o maior percentual.</li>
+                        <li><strong>Compensação Orgânica:</strong> Se não possui horas de voo/salto/mergulho, mantenha em 0%. Se não fechou as cotas integrais, selecione onde parou. Caso tenha sido promovido sem atualizar a cota, altere o campo "Ref. Posto/Graduação" para o posto/graduação onde parou.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- CARD 2 -->
+            <div class="inst-card">
+                <div class="instruction-text">
+                    <h4>2. Benefícios e Extras</h4>
+                    <ul>
+                        <li><strong>Adic. Natalino e Férias:</strong> Marque para simular o mês de recebimento destes direitos.</li>
+                        <li><strong>Gratificação (REPVIP/etc):</strong> Existem duas formas:<br>
+                        <em>Opção 1:</em> Use a roleta de dias. O aplicativo calcula 2% do soldo automaticamente por dia.<br>
+                        <em>Opção 2:</em> Se já sabe o valor total em Reais, deixe a roleta em zero e digite o valor no campo "Adic. Extra (Trib. IR)".</li>
+                        <li><strong>Adic. Extra (Trib. IR):</strong> Ganhos adicionais em dinheiro que sofrem desconto de Imposto de Renda.</li>
+                        <li><strong>Adic. Extra (Isento):</strong> Valores limpos sem imposto (ex: atrasados de pré-escolar, diárias, etapa, auxílio fardamento).</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- CARD 3 -->
+            <div class="inst-card">
+                <div class="instruction-text">
+                    <h4>3. Saúde e Descontos</h4>
+                    <ul>
+                        <li><strong>Pré-Escolar (Filhos):</strong> Preencha a quantidade (no Passo 2). O aplicativo insere o crédito base, mas também calcula e debita automaticamente a sua <strong>Cota-Parte</strong> de acordo com a sua faixa salarial no sistema.</li>
+                        <li><strong>FUSMA (Dependentes):</strong> Coloque a quantidade exata de dependentes diretos ou indiretos. O fundo do titular (1,8%) é automático.</li>
+                        <li><strong>Coparticipação Saúde:</strong> O valor descontado no Bilhete de Pagamento (BP) por consultas/exames.</li>
+                        <li><strong>Emp/Seguro/Outros:</strong> 4 campos livres para listar todas as consignações que descontam direto no BP (Empréstimos, financiamentos, seguros de vida, clubes, associações militares, FAM, Poupex, etc.). Dica: você pode tocar no nome do campo para renomeá-lo.</li>
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+
+        <div style="padding: 0 10px; width: 100%;">
+            <button class="btn-close-inst" onclick="fecharModalInstrucoes()">Fechar Guia</button>
+        </div>
+
+    </div>
+</div>
+
+<div class="progress-dots">
+    <div class="dot active" id="dot-0"></div><div class="dot" id="dot-1"></div><div class="dot" id="dot-2"></div><div class="dot" id="dot-3"></div><div class="dot" id="dot-4"></div><div class="dot" id="dot-5"></div><div class="dot" id="dot-6"></div><div class="dot" id="dot-7"></div>
+</div>
+
+<div class="app-container">
+    <div class="wizard-track" id="wizardTrack">
+        
+        <!-- TELA 1: CARREIRA -->
+        <div class="wizard-step">
+            <div class="header-app">
+                <div class="logo-box">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M256 8C225.1 8 200 33.1 200 64c0 28.5 21.4 52 49.3 55.6V152H144c-13.3 0-24 10.7-24 24s10.7 24 24 24h105.3v216.5c-60.6-11.4-106.3-58.1-120.4-118.6C126.6 286.3 116 278 104 278c-15.6 0-27.4 14.3-23.7 29.4c17.5 72.4 75.3 131.2 147.7 149.7V488c0 13.3 10.7 24 24 24s24-10.7 24-24v-30.9c72.4-18.5 130.2-77.3 147.7-149.7c3.7-15.1-8.1-29.4-23.7-29.4c-12 0-22.6 8.3-25.3 19.9c-14.1 60.5-59.8 107.2-120.4 118.6V200H368c13.3 0 24-10.7 24-24s-10.7-24-24-24H262.7v-32.4c27.9-3.6 49.3-27.1 49.3-55.6C312 33.1 286.9 8 256 8zM256 40c13.3 0 24 10.7 24 24s-10.7 24-24 24s-24-10.7-24-24s10.7-24 24-24z"/></svg>
+                </div>
+                <div class="title-box">
+                    <h1>BP <em>Off-line</em></h1>
+                </div>
+                <div id="badge-save" class="auto-save-badge">Salvo</div>
+            </div>
+
+            <div class="card-inner">
+                <h2>1. Dados de Carreira</h2>
+                <div class="grid-1">
+                    <div class="form-group">
+                        <label>Posto/Graduação Atual:</label>
+                        <select id="posto" data-color="azul">
+                            <option value="" selected disabled>Selecione seu Posto/Graduação...</option>
+                            <option value="AE">Almirante de Esquadra</option><option value="VA">Vice-Almirante</option><option value="CA">Contra-Almirante</option>
+                            <option value="CMG">Cap. de Mar e Guerra</option><option value="CF">Capitão de Fragata</option><option value="CC">Capitão de Corveta</option>
+                            <option value="CT">Capitão-Tenente</option><option value="1º TEN">1º Tenente</option><option value="2º TEN">2º Tenente</option>
+                            <option value="GM">Guarda-Marinha</option><option value="SO">Suboficial</option><option value="1º SG">1º Sargento</option>
+                            <option value="2º SG">2º Sargento</option><option value="3º SG">3º Sargento</option><option value="CB">Cabo</option><option value="MN">Marinheiro</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Adicional de Habilitação:</label>
+                        <select id="habilitacao" data-color="azul">
+                            <option value="" selected disabled>Selecione a Habilitação...</option>
+                            <option value="0.73">73% - Altos Estudos I</option><option value="0.68">68% - Altos Estudos II</option><option value="0.45">45% - Aperfeiçoamento</option>
+                            <option value="0.27">27% - Especialização</option><option value="0.12">12% - Formação</option><option value="0.00">0% - Nenhum</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Adicional de Disponibilidade:</label>
+                        <select id="disponibilidade" data-color="azul">
+                            <option value="" selected disabled>Aguardando principal...</option>
+                            <option value="0.05">5% (2º TEN, GM, MN)</option><option value="0.06">6% (1º TEN, 3º SG, CB)</option><option value="0.12">12% (CT, 2º SG)</option>
+                            <option value="0.16">16% (3º SG QE)</option><option value="0.20">20% (CC, 1º SG)</option><option value="0.26">26% (CF, 2º SG QE)</option>
+                            <option value="0.32">32% (CMG, SO)</option><option value="0.35">35% (CA)</option><option value="0.38">38% (VA)</option><option value="0.41">41% (AE)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Comp. Orgânica - Voo/Mergulho (%):</label>
+                        <select id="organica_perc" data-color="azul">
+                            <option value="0.00" selected>0 Cotas (0%)</option>
+                            <option value="0.20">10 Cotas (20% Integral)</option><option value="0.18">9 Cotas (18%)</option><option value="0.16">8 Cotas (16%)</option>
+                            <option value="0.14">7 Cotas (14%)</option><option value="0.12">6 Cotas (12%)</option><option value="0.10">5 Cotas (10%)</option>
+                            <option value="0.08">4 Cotas (8%)</option><option value="0.06">3 Cotas (6%)</option><option value="0.04">2 Cotas (4%)</option><option value="0.02">1 Cota (2%)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Comp. Orgânica (Ref. Posto/Graduação):</label>
+                        <select id="organica_posto" data-color="azul">
+                            <option value="" selected disabled>Aguardando principal...</option>
+                            <option value="AE">Almirante de Esquadra</option><option value="VA">Vice-Almirante</option><option value="CA">Contra-Almirante</option>
+                            <option value="CMG">Cap. de Mar e Guerra</option><option value="CF">Capitão de Fragata</option><option value="CC">Capitão de Corveta</option>
+                            <option value="CT">Capitão-Tenente</option><option value="1º TEN">1º Tenente</option><option value="2º TEN">2º Tenente</option>
+                            <option value="GM">Guarda-Marinha</option><option value="SO">Suboficial</option><option value="1º SG">1º Sargento</option>
+                            <option value="2º SG">2º Sargento</option><option value="3º SG">3º Sargento</option><option value="CB">Cabo</option><option value="MN">Marinheiro</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <button class="btn-large btn-instruction" onclick="abrirModalInstrucoes()">Ver Instruções de Uso</button>
+
+            </div>
+        </div>
+
+        <!-- TELA 2: BENEFÍCIOS E ADICIONAIS -->
+        <div class="wizard-step">
+            <div class="card-inner">
+                <h2>2. Benefícios e Adicionais Extras</h2>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Adic. Natalino (13º):</label>
+                        <select id="natalino_opt" data-color="azul">
+                            <option value="0" selected>Não (0%)</option>
+                            <option value="50_exc">50% (Exceto Dezembro)</option>
+                            <option value="50_dez">50% (Dezembro)</option>
+                            <option value="100">50% + 50% (Dezembro, com adiantamento)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Férias (1/3 Isento):</label>
+                        <select id="ferias_opt" data-color="azul"><option value="0" selected>Não</option><option value="1/3">Sim</option></select>
+                    </div>
+                    <div class="form-group grid-full">
+                        <label>Adic. Área Alfa (20% do Soldo):</label>
+                        <select id="area_alfa" data-color="azul"><option value="0" selected>Não (0%)</option><option value="0.20">Sim (20%)</option></select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label style="margin-bottom: 2px;">Gratificação (Dias x 2%):</label>
+                        <span style="font-size: 0.6rem; color: var(--muted-text); margin-bottom: 4px; line-height: 1;">Ex: Qtd de dias REPVIP/Etc</span>
+                        <select id="repvip_dias" data-color="azul"></select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Aux. Alimentação (R$):</label>
+                        <input type="tel" id="alimentacao" class="dinheiro" data-color="azul" placeholder="Ex: R$ 130 / R$ 67,50 / Outros">
+                    </div>
+                    <div class="form-group grid-full">
+                        <label>Auxílio Transporte (Receita Isenta R$):</label>
+                        <input type="tel" id="aux_transporte" class="dinheiro" data-color="azul" placeholder="0,00">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Pré-Escolar (Filhos):</label>
+                        <select id="pre_escolar_qtd" data-color="azul"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Adic. Comando / Chefia:</label>
+                        <select id="comando_perc" data-color="azul"><option value="0.00" selected>Não (0%)</option><option value="0.10">Sim (10%)</option></select>
+                    </div>
+                    
+                    <div class="form-group grid-full">
+                        <label>Adic. Extra (Trib. IR):</label>
+                        <input type="tel" id="adicionais_trib" class="dinheiro" data-color="azul" placeholder="Ex: Valor total de GRAT REPVIP (não inserindo dias)">
+                    </div>
+                    <div class="form-group grid-full">
+                        <label>Adic. Extra (Isento):</label>
+                        <input type="tel" id="adicionais_extra" class="dinheiro" data-color="azul" placeholder="Ex: Atrasados de pré-escolar / auxílio / diárias">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TELA 3: SAÚDE E DESCONTOS EXTRAS -->
+        <div class="wizard-step">
+            <div class="card-inner">
+                <h2>3. Saúde e Descontos Extras</h2>
+                <div class="grid-2">
+                    
+                    <div class="form-group">
+                        <label>Dep. Diretos (FUSMA):</label>
+                        <select id="dep_dir" data-color="verde"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Dep. Indiretos (FUSMA):</label>
+                        <select id="dep_indir" data-color="verde"></select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Coparticipação Saúde (R$):</label>
+                        <input type="tel" id="desconto_saude" class="dinheiro" data-color="vermelho" placeholder="0,00">
+                    </div>
+                    <div class="form-group">
+                        <label>Pensão Alimentícia:</label>
+                        <select id="pensao_alimenticia" data-color="vermelho"></select>
+                    </div>
+                    <div class="form-group grid-full">
+                        <label>Desconto de Transporte (BP R$):</label>
+                        <input type="tel" id="desc_transporte" class="dinheiro" data-color="vermelho" placeholder="0,00">
+                    </div>
+                    <!-- Labels Renomeáveis -->
+                    <div class="form-group"><label contenteditable="true" class="editable-label" id="lbl_emp1">Emp/Seguro/Outros 1</label><input type="tel" id="emp1" class="dinheiro" data-color="vermelho" placeholder="0,00"></div>
+                    <div class="form-group"><label contenteditable="true" class="editable-label" id="lbl_emp2">Emp/Seguro/Outros 2</label><input type="tel" id="emp2" class="dinheiro" data-color="vermelho" placeholder="0,00"></div>
+                    <div class="form-group"><label contenteditable="true" class="editable-label" id="lbl_emp3">Emp/Seguro/Outros 3</label><input type="tel" id="emp3" class="dinheiro" data-color="vermelho" placeholder="0,00"></div>
+                    <div class="form-group"><label contenteditable="true" class="editable-label" id="lbl_emp4">Emp/Seguro/Outros 4</label><input type="tel" id="emp4" class="dinheiro" data-color="vermelho" placeholder="0,00"></div>
+                </div>
+                <div class="caixa-override">
+                    <label>Forçar Valor do IR (R$):</label>
+                    <div style="display:flex; gap: 8px; margin-top: 4px;">
+                        <input type="tel" id="ir_manual" class="dinheiro_opcional" data-color="vermelho" placeholder="Vazio = Receita Fed." style="margin-top:0;">
+                        <button class="btn-clear" onclick="limparIR()">Limpar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TELA 4: DEMONSTRATIVO BP -->
+        <div class="wizard-step">
+            <div class="card-inner result-card">
+                <h2>4. Demonstrativo Detalhado</h2>
+                
+                <div class="grid-center-4">
+                    <div class="res-box"><label>Soldo</label><span id="res_soldo">0,00</span></div>
+                    <div class="res-box"><label>Adic. Mil</label><span id="res_admil">0,00</span></div>
+                    <div class="res-box"><label>Adic. Hab</label><span id="res_adhab">0,00</span></div>
+                    <div class="res-box"><label>Adic. Disp</label><span id="res_addisp">0,00</span></div>
+                    <div class="res-box"><label>Comp. Org</label><span id="res_org">0,00</span></div>
+                    <div class="res-box"><label>Natalino</label><span id="res_natalino">0,00</span></div>
+                    <div class="res-box"><label>Férias(1/3)</label><span id="res_ferias">0,00</span></div>
+                    <div class="res-box"><label>Grat/Com/adic</label><span id="res_outros">0,00</span></div>
+                    <div class="res-box info" id="box_fusma_restit" style="display:none;"><label>FUSMA Rest.</label><span id="res_fusma_restit">0,00</span></div>
+                </div>
+                
+                <div class="grid-center-4" style="margin-top: 8px;">
+                    <div class="res-box desconto"><label>Pens. Mil</label><span id="res_pensao">0,00</span></div>
+                    <div class="res-box desconto"><label>FUSMA Tit <span id="badge_teto_fusma" style="display:none; color:#ea580c; font-size:0.4rem; padding:1px 3px; background:rgba(234,88,12,0.15); border-radius:3px; margin-left:2px; vertical-align:middle;">TETO</span></label><span id="res_fusma_tit">0,00</span></div>
+                    <div class="res-box desconto" id="box_fusma_dir" style="display:none;"><label>FUSMA Dir</label><span id="res_fusma_dir">0,00</span></div>
+                    <div class="res-box desconto" id="box_fusma_ind" style="display:none;"><label>FUSMA Ind</label><span id="res_fusma_ind">0,00</span></div>
+                    
+                    <div class="res-box desconto" id="box_cota_pre_escolar" style="display:none;"><label>Cota Pré-Esc.</label><span id="res_cota_pre_escolar">0,00</span></div>
+                    
+                    <div class="res-box desconto" id="box_saude" style="display:none;"><label>Cop. Saúde</label><span id="res_saude">0,00</span></div>
+                    <div class="res-box desconto" id="box_transporte" style="display:none;"><label>Desc. Trans</label><span id="res_desc_transporte_card">0,00</span></div>
+                </div>
+
+                <div class="grid-totais">
+                    <div class="caixa-total bruto"><span>Total Bruto</span><span id="res_bruto">R$ 0,00</span></div>
+                    <div class="caixa-total subtotal"><span>Subt. Líquido (Sem desc. IR)</span><span id="res_subtotal">R$ 0,00</span></div>
+                </div>
+                
+                <div class="linha desconto" id="linha_pensao_al" style="display:none;"><span>Pensão Alimentícia:</span> <span id="res_pensao_al">- R$ 0,00</span></div>
+                <div class="linha desconto"><span>Emp/Seguro/Outros:</span> <span id="res_emprestimos">- R$ 0,00</span></div>
+                <div class="linha desconto" style="border-bottom: none; padding-bottom: 0; align-items: flex-start;">
+                    <span>Imposto de Renda:</span> 
+                    <span style="text-align: right; line-height: 1.1;" id="res_irpf">- R$ 0,00</span>
+                </div>
+                
+                <div class="caixa-total liquido"><span>Líquido Estimado:</span> <span id="res_liquido">R$ 0,00</span></div>
+
+                <div class="action-group">
+                    <button class="btn-large btn-pdf" onclick="abrirModalPDF('bp')">📄 Gerar PDF (BP)</button>
+                    <button class="btn-large btn-budget" onclick="changePage(1)">Criar Orçamento Mensal</button>
+                </div>
+            </div>
+
+            <a href="mailto:henraycomercio@gmail.com?subject=Dúvida/Sugestão%20-%20BP%20Off-line" class="feedback-strip">
+                Dúvidas ou erros nos cálculos? Envie um feedback
+            </a>
+        </div>
+
+        <!-- TELA 5: ORÇAMENTO - RENDAS, MORADIA & DIVERSOS -->
+        <div class="wizard-step">
+            <div class="card-inner">
+                <h2>5. Moradia, Contas Básicas e Diversos</h2>
+                
+                <h3>Rendas Adicionais</h3>
+                <div class="grid-2">
+                    <!-- Labels Renomeáveis -->
+                    <div class="form-group"><label contenteditable="true" class="editable-label" id="lbl_orc_renda1">Renda Adicional 1</label><input type="tel" id="orc_renda1" class="dinheiro orc-receita" data-color="azul" placeholder="Ex: Cônjuge/Familiar"></div>
+                    <div class="form-group"><label contenteditable="true" class="editable-label" id="lbl_orc_renda2">Renda Adicional 2</label><input type="tel" id="orc_renda2" class="dinheiro orc-receita" data-color="azul" placeholder="Ex: Trabalhos Extras"></div>
+                    <div class="form-group"><label contenteditable="true" class="editable-label" id="lbl_orc_renda3">Renda Adicional 3</label><input type="tel" id="orc_renda3" class="dinheiro orc-receita" data-color="azul" placeholder="Ex: Benefícios/Vendas"></div>
+                    <div class="form-group"><label contenteditable="true" class="editable-label" id="lbl_orc_renda4">Renda Adicional 4</label><input type="tel" id="orc_renda4" class="dinheiro orc-receita" data-color="azul" placeholder="Ex: Rendimentos/Invest."></div>
+                </div>
+
+                <h3>Moradia, Contas & Diversos</h3>
+                <div class="grid-2">
+                    <div class="form-group"><label>Aluguel / Financiamento</label><input type="tel" id="orc_aluguel" class="dinheiro orc-despesa" data-color="vermelho" placeholder="0,00"></div>
+                    <div class="form-group"><label>Condomínio / IPTU</label><input type="tel" id="orc_condominio" class="dinheiro orc-despesa" data-color="vermelho" placeholder="0,00"></div>
+                    <div class="form-group"><label>Água</label><input type="tel" id="orc_agua" class="dinheiro orc-despesa" data-color="vermelho" placeholder="0,00"></div>
+                    <div class="form-group"><label>Luz</label><input type="tel" id="orc_luz" class="dinheiro orc-despesa" data-color="vermelho" placeholder="0,00"></div>
+                    <div class="form-group"><label>Internet / TV</label><input type="tel" id="orc_internet" class="dinheiro orc-despesa" data-color="vermelho" placeholder="0,00"></div>
+                    <div class="form-group"><label>Planos Celular</label><input type="tel" id="orc_celular" class="dinheiro orc-despesa" data-color="vermelho" placeholder="0,00"></div>
+                    <div class="form-group"><label>Compras (Mercado)</label><input type="tel" id="orc_mercado" class="dinheiro orc-despesa" data-color="vermelho" placeholder="0,00"></div>
+                    <div class="form-group"><label>Dízimo / Doações</label><input type="tel" id="orc_doacoes" class="dinheiro orc-despesa" data-color="vermelho" placeholder="0,00"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TELA 6: ORÇAMENTO - TRANSPORTE, SAÚDE E EDUCAÇÃO -->
+        <div class="wizard-step">
+            <div class="card-inner">
+                <h2>6. Orçamento: Veículo, Saúde & Educ.</h2>
+
+                <h3>Transporte</h3>
+                <div class="grid-2">
+                    <div class="form-group"><label>Combustível / Uber</label><input type="tel" id="orc_combustivel" class="dinheiro orc-despesa" data-color="vermelho" placeholder="0,00"></div>
+                    <div class="form-group"><label>Manutenção / Revisão</label><input type="tel" id="orc_manutencao" class="dinheiro orc-despesa" data-color="vermelho" placeholder="0,00"></div>
+                    <div class="form-group"><label>Seguro Auto / IPVA</label><input type="tel" id="orc_seg_auto" class="dinheiro orc-despesa" data-color="vermelho" placeholder="0,00"></div>
+                    <div class="form-group"><label>Parc. Veículo / Consórcio</label><input type="tel" id="orc_parc_carro" class="dinheiro orc-despesa" data-color="vermelho" placeholder="0,00"></div>
+                </div>
+
+                <h3>Saúde & Educação</h3>
+                <div class="grid-2">
+                    <div class="form-group"><label>Planos de Saúde</label><input type="tel" id="orc_plano_saude" class="dinheiro orc-despesa" data-color="vermelho" placeholder="0,00"></div>
+                    <div class="form-group"><label>Farmácia / Médicos</label><input type="tel" id="orc_farmacia" class="dinheiro orc-despesa" data-color="vermelho" placeholder="0,00"></div>
+                    <div class="form-group"><label>Escola / Creche</label><input type="tel" id="orc_escola" class="dinheiro orc-despesa" data-color="vermelho" placeholder="0,00"></div>
+                    <div class="form-group"><label>Faculdade / Cursos</label><input type="tel" id="orc_faculdade" class="dinheiro orc-despesa" data-color="vermelho" placeholder="0,00"></div>
+                    <div class="form-group"><label>Academia / Esportes</label><input type="tel" id="orc_academia" class="dinheiro orc-despesa" data-color="vermelho" placeholder="0,00"></div>
+                    <div class="form-group"><label>Seguro de Vida</label><input type="tel" id="orc_seg_vida" class="dinheiro orc-despesa" data-color="vermelho" placeholder="0,00"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TELA 7: ORÇAMENTO - DIA A DIA & LAZER -->
+        <div class="wizard-step">
+            <div class="card-inner">
+                <h2>7. Orçamento: Estilo de Vida</h2>
+
+                <h3>Dia a Dia & Estética</h3>
+                <div class="grid-2">
+                    <div class="form-group"><label>Padaria / Conveniência</label><input type="tel" id="orc_padaria" class="dinheiro orc-despesa" data-color="vermelho" placeholder="0,00"></div>
+                    <div class="form-group"><label>Pet Shop / Vet</label><input type="tel" id="orc_pet" class="dinheiro orc-despesa" data-color="vermelho" placeholder="0,00"></div>
+                    <div class="form-group"><label>Roupas / Beleza</label><input type="tel" id="orc_roupas" class="dinheiro orc-despesa" data-color="vermelho" placeholder="0,00"></div>
+                    <div class="form-group"><label>Delivery / Ifood</label><input type="tel" id="orc_ifood" class="dinheiro orc-despesa" data-color="vermelho" placeholder="0,00"></div>
+                </div>
+
+                <h3>Lazer, Finanças & Diversos</h3>
+                <div class="grid-2">
+                    <div class="form-group"><label>Passeios / Saídas / Lazer</label><input type="tel" id="orc_saidas" class="dinheiro orc-despesa" data-color="vermelho" placeholder="0,00"></div>
+                    <div class="form-group"><label>Cartão de Crédito</label><input type="tel" id="orc_cartao" class="dinheiro orc-despesa" data-color="vermelho" placeholder="Fatura Total"></div>
+                    <div class="form-group"><label>Poupança / Investimentos</label><input type="tel" id="orc_poupanca" class="dinheiro orc-despesa" data-color="vermelho" placeholder="0,00"></div>
+                    <!-- Label Renomeável -->
+                    <div class="form-group"><label contenteditable="true" class="editable-label" id="lbl_orc_outros">Outros Gastos</label><input type="tel" id="orc_outros" class="dinheiro orc-despesa" data-color="vermelho" placeholder="0,00"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TELA 8: RESUMO DO ORÇAMENTO -->
+        <div class="wizard-step">
+            <div class="card-inner result-card">
+                <h2>8. Resumo do Orçamento</h2>
+                
+                <div class="grid-center-3">
+                    <div class="res-box info"><label>Salário BP</label><span id="orc_res_bp">0,00</span></div>
+                    <div class="res-box info"><label>Rendas Ext.</label><span id="orc_res_extras">0,00</span></div>
+                    <div class="res-box desconto"><label>Moradia/Bás.</label><span id="orc_res_moradia">0,00</span></div>
+                    <div class="res-box desconto"><label>Transporte</label><span id="orc_res_transporte">0,00</span></div>
+                    <div class="res-box desconto"><label>Saúde/Educ.</label><span id="orc_res_saude_edu">0,00</span></div>
+                    <div class="res-box desconto"><label>Lazer/Outros</label><span id="orc_res_lazer">0,00</span></div>
+                </div>
+
+                <div class="grid-totais" style="margin-top: 10px;">
+                    <div class="caixa-total bruto" style="background-color: rgba(224, 242, 254, 0.7); border-color: rgba(186, 230, 253, 0.8);">
+                        <span style="color: var(--accent-blue);">Total Receitas</span>
+                        <span id="orc_res_receita" style="color: var(--accent-blue);">R$ 0,00</span>
+                    </div>
+                    <div class="caixa-total subtotal" style="background-color: rgba(254, 242, 242, 0.7); border-color: rgba(254, 202, 202, 0.8);">
+                        <span style="color: var(--red-text);">Total Despesas</span>
+                        <span id="orc_res_despesa" style="color: var(--red-text);">- R$ 0,00</span>
+                    </div>
+                </div>
+                
+                <!-- INÍCIO DASHBOARD VISUAL HORIZONTAL ULTRA-COMPACTO -->
+                <div style="background: rgba(248, 250, 252, 0.6); border: 1px solid var(--border-color); border-radius: 12px; padding: 10px; margin-top: 8px; display: flex; align-items: center; gap: 12px;">
+                    
+                    <!-- Lado Esquerdo: Gráfico de Pizza Reduzido -->
+                    <div id="orc_chart" class="donut-chart">
+                        <div class="donut-inner">
+                            <span style="font-size: 0.5rem; color: var(--secondary-text); font-weight: 700; text-transform: uppercase;">Gasto</span>
+                            <span id="perc_gasto" style="font-size: 0.9rem; font-weight: 800; color: var(--primary-text); line-height: 1;">0%</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Lado Direito: Legenda e Barra de Consumo -->
+                    <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+                        <div style="display: flex; flex-direction: column; gap: 4px; font-size: 0.55rem; font-weight: 700; color: var(--secondary-text); margin-bottom: 8px;">
+                            <div style="display:flex; justify-content: space-between;">
+                                <span style="display:flex; align-items:center; gap:4px;"><span style="width:8px; height:8px; border-radius:50%; background:#ef4444;"></span> Despesas</span>
+                                <span style="display:flex; align-items:center; gap:4px;"><span style="width:8px; height:8px; border-radius:50%; background:#3b82f6;"></span> Invest.</span>
+                                <span style="display:flex; align-items:center; gap:4px;"><span style="width:8px; height:8px; border-radius:50%; background:#10b981;"></span> Livre</span>
+                            </div>
+                        </div>
+                        
+                        <div style="width: 100%;">
+                            <div style="display: flex; justify-content: space-between; font-size: 0.6rem; font-weight: 700; color: var(--secondary-text); margin-bottom: 4px;">
+                                <span>Consumo Real</span>
+                                <span id="lbl_status_consumo">Saudável</span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div id="bar_consumo" class="progress-fill"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- FIM DASHBOARD VISUAL -->
+
+                <div class="caixa-total liquido" id="caixa_saldo_final" style="margin-top: 10px; padding: 10px 14px; font-size: 1rem;">
+                    <span>Saldo Restante:</span> 
+                    <span id="orc_saldo_final">R$ 0,00</span>
+                </div>
+
+                <div class="action-group">
+                    <button class="btn-large btn-pdf" onclick="abrirModalPDF('orcamento')">📄 Gerar PDF (Orçamento)</button>
+                </div>
+            </div>
+
+            <a href="mailto:henraycomercio@gmail.com?subject=Dúvida/Sugestão%20-%20Orçamento%20Mensal" class="feedback-strip">
+                💡 Faltou algum campo? Envie sugestão
+            </a>
+            
+            <div class="footer-credit">Desenvolvido por Henrique Silva</div>
+            
+        </div>
+
+    </div>
+</div>
+
+<!-- NAVEGAÇÃO FLUTUANTE PREMIUM PROPORCIONAL -->
+<div class="bottom-nav">
+    <button class="nav-btn btn-prev" onclick="changePage(-1)">Voltar</button>
+    <button class="nav-btn btn-reports" onclick="abrirRelatorios()">Relatórios</button>
+    <button class="nav-btn btn-next" id="btnNext" onclick="changePage(1)">Avançar</button>
+</div>
+
+<script>
+    // GERAÇÃO SÍNCRONA DAS ROLETAS E LÓGICA DO TUTORIAL
+    const selDias = document.getElementById('repvip_dias');
+    if(selDias) { for(let i=0; i<=60; i++) selDias.add(new Option(i === 0 ? "0 dias" : (i === 1 ? "1 dia" : i + " dias"), i)); selDias.value = "0"; }
+    
+    const selFilhos = document.getElementById('pre_escolar_qtd');
+    if(selFilhos) { for(let i=0; i<=10; i++) selFilhos.add(new Option(i === 0 ? "0 filhos" : (i === 1 ? "1 filho" : i + " filhos"), i)); selFilhos.value = "0"; }
+    
+    const selDepDir = document.getElementById('dep_dir');
+    if(selDepDir) { for(let i=0; i<=10; i++) selDepDir.add(new Option(i === 0 ? "0 dep." : (i === 1 ? "1 dep." : i + " dep."), i)); selDepDir.value = "0"; }
+    
+    const selDepIndir = document.getElementById('dep_indir');
+    if(selDepIndir) { for(let i=0; i<=10; i++) selDepIndir.add(new Option(i === 0 ? "0 dep." : (i === 1 ? "1 dep." : i + " dep."), i)); selDepIndir.value = "0"; }
+
+    const selPensao = document.getElementById('pensao_alimenticia');
+    if(selPensao) { 
+        selPensao.add(new Option("Não (0%)", "0.00"));
+        for(let i = 5; i <= 50; i++) { 
+            selPensao.add(new Option(i + "% do Líqu.", (i / 100).toFixed(2))); 
+        } 
+        selPensao.value = "0.00"; 
+    }
+
+    const totalPages = 8;
+    let currentPage = 0;
+    const track = document.getElementById('wizardTrack');
+    const btnNext = document.getElementById('btnNext');
+    let salarioLiquidoBP = 0; 
+    let tipoRelatorioAtual = '';
+    let isCarregandoDados = true; 
+
+    // LÓGICA DE LABELS CUSTOMIZADOS E AUTO-SAVE
+    function salvarLabels() {
+        const labels = {};
+        document.querySelectorAll('.editable-label').forEach(lbl => { labels[lbl.id] = lbl.innerText; });
+        localStorage.setItem('bp_offline_labels', JSON.stringify(labels));
+    }
+    
+    function carregarLabels() {
+        const saved = JSON.parse(localStorage.getItem('bp_offline_labels'));
+        if (saved) {
+            document.querySelectorAll('.editable-label').forEach(lbl => { if (saved[lbl.id]) lbl.innerText = saved[lbl.id]; });
+        }
+    }
+    document.querySelectorAll('.editable-label').forEach(lbl => { lbl.addEventListener('blur', salvarLabels); });
+
+    // LÓGICA DO TUTORIAL (INSTRUÇÕES) - NATIVE SCROLL SNAP
+    let instCurrentPage = 0;
+    const instTotalPages = 3; 
+    const instTrackEl = document.getElementById('instTrack');
+
+    instTrackEl.addEventListener('scroll', () => {
+        let index = Math.round(instTrackEl.scrollLeft / instTrackEl.clientWidth);
+        if(index !== instCurrentPage) {
+            instCurrentPage = index;
+            atualizarInstrucoesDots();
+        }
+    }, { passive: true });
+
+    function mudarInstrucao(direcao) {
+        let target = instCurrentPage + direcao;
+        if (target < 0) target = 0;
+        if (target >= instTotalPages) target = instTotalPages - 1;
+        
+        instTrackEl.scrollTo({
+            left: target * instTrackEl.clientWidth,
+            behavior: 'smooth'
+        });
+    }
+
+    function atualizarInstrucoesDots() {
+        const dots = document.querySelectorAll('.inst-dot');
+        dots.forEach((dot, index) => {
+            if (index === instCurrentPage) dot.classList.add('active');
+            else dot.classList.remove('active');
+        });
+        
+        const btnPrev = document.getElementById('btnInstPrev');
+        const btnNext = document.getElementById('btnInstNext');
+        
+        btnPrev.style.opacity = instCurrentPage === 0 ? '0' : '1';
+        btnPrev.style.pointerEvents = instCurrentPage === 0 ? 'none' : 'auto';
+        
+        btnNext.style.opacity = instCurrentPage === instTotalPages - 1 ? '0' : '1';
+        btnNext.style.pointerEvents = instCurrentPage === instTotalPages - 1 ? 'none' : 'auto';
+    }
+
+    function abrirModalInstrucoes() { 
+        document.getElementById('modalInstrucoes').style.display = 'flex'; 
+        instTrackEl.scrollLeft = 0;
+        instCurrentPage = 0;
+        atualizarInstrucoesDots();
+    }
+
+    function fecharModalInstrucoes() { 
+        document.getElementById('modalInstrucoes').style.display = 'none'; 
+    }
+
+    // AUTO-SAVE E CARREGAMENTO
+    function salvarDadosLocais() {
+        if (isCarregandoDados) return; 
+        
+        const inputs = document.querySelectorAll('input, select');
+        const dados = {};
+        inputs.forEach(input => {
+            if(input.id && input.id !== 'modalMes' && input.id !== 'modalAno') {
+                dados[input.id] = input.value;
+            }
+        });
+        localStorage.setItem('bp_offline_dados_usuario', JSON.stringify(dados));
+        
+        const badge = document.getElementById('badge-save');
+        badge.style.opacity = '1';
+        badge.innerText = "Salvando...";
+        badge.classList.add('saving');
+        setTimeout(() => {
+            badge.innerText = "Salvo";
+            badge.classList.remove('saving');
+            setTimeout(() => { badge.style.opacity = '0'; }, 2000);
+        }, 800);
+    }
+
+    function carregarDadosLocais() {
+        carregarLabels();
+        const dados = JSON.parse(localStorage.getItem('bp_offline_dados_usuario'));
+        if(dados) {
+            for(let id in dados) {
+                const el = document.getElementById(id);
+                if(el) { 
+                    el.value = dados[id]; 
+                    if(el.tagName === 'INPUT' && (el.classList.contains('dinheiro') || el.classList.contains('dinheiro_opcional'))) {
+                        aplicarMascara(el); 
+                    }
+                }
+            }
+        }
+        isCarregandoDados = false; 
+        calcular(); 
+    }
+
+    // PASTA DE RELATÓRIOS SALVOS
+    let abaAtualRelatorio = 'bp';
+
+    function abrirRelatorios() {
+        document.getElementById('modalRelatorios').style.display = 'flex';
+        renderizarListaRelatorios();
+    }
+
+    function fecharRelatorios() { document.getElementById('modalRelatorios').style.display = 'none'; }
+
+    function mudarAbaRelatorio(aba) {
+        abaAtualRelatorio = aba;
+        document.getElementById('tab-bp').className = aba === 'bp' ? 'aba-relatorio-btn aba-ativa' : 'aba-relatorio-btn aba-inativa';
+        document.getElementById('tab-orc').className = aba === 'orcamento' ? 'aba-relatorio-btn aba-ativa' : 'aba-relatorio-btn aba-inativa';
+        renderizarListaRelatorios();
+    }
+
+    function renderizarListaRelatorios() {
+        const lista = document.getElementById('lista-relatorios');
+        lista.innerHTML = '';
+        let historico = JSON.parse(localStorage.getItem('bp_offline_historico_json_v22')) || [];
+        let filtrados = historico.filter(r => r.tipo === abaAtualRelatorio).reverse();
+
+        if(filtrados.length === 0) {
+            lista.innerHTML = `<p style="text-align:center; color:var(--muted-text); margin-top:20px; font-weight: 500;">Sua pasta está vazia.</p>`;
+            return;
+        }
+
+        filtrados.forEach(r => {
+            const icone = r.tipo === 'bp' ? '📄' : '📊';
+            const titulo = r.tipo === 'bp' ? `BP de ${r.periodo}` : `Orçamento de ${r.periodo}`;
+            
+            lista.innerHTML += `
+                <div class="item-relatorio">
+                    <div style="display:flex; flex-direction:column; max-width: 60%;">
+                        <strong style="color:var(--primary-text); font-size:0.95rem;">${icone} ${titulo}</strong>
+                        <span style="font-size:0.65rem; color:var(--secondary-text); margin-top:2px;">Criado: ${r.dataGeracao}</span>
+                    </div>
+                    <div style="display:flex; gap:6px;">
+                        <button onclick="baixarRelatorioSalvo(${r.id})" style="background:rgba(255,255,255,0.8); color:var(--primary-text); border:1px solid rgba(0,0,0,0.1); padding:8px 12px; border-radius:8px; font-weight:700; cursor:pointer; font-size:0.75rem;">Ver PDF</button>
+                        <button onclick="excluirRelatorioSalvo(${r.id})" style="background:rgba(254,242,242,0.8); color:var(--red-text); border:none; padding:8px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.8rem;">🗑️</button>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    // CONSTRUTOR DINÂMICO DE HTML PARA O PDF 
+    function buildPrintHTML(tipo, periodoRef, dataGeracao, dados) {
+        let html = '';
+        if (tipo === 'bp') {
+            html += `<div class="print-header"><h1>Demonstrativo de Remuneração Militar</h1><p>Espelho Gerado via BP <em>Off-line</em> — Emitido em ${dataGeracao}</p></div>`;
+            html += `<div class="print-meta"><div><strong>Posto/Graduação:</strong> ${dados.posto}</div><div><strong>Período de Referência:</strong> ${periodoRef}</div></div>`;
+            
+            html += `<div class="print-section-title">Créditos e Direitos</div>`;
+            html += `<table class="print-table"><thead><tr><th>Descrição do Item</th><th>Valor da Verba</th></tr></thead><tbody>`;
+            
+            html += `<tr><td>Soldo Base do Posto/Graduação</td><td class="val text-success">${dados.soldo}</td></tr>`;
+            html += `<tr><td>Adicional Militar</td><td class="val text-success">${dados.admil}</td></tr>`;
+            
+            if(Math.abs(parseMoeda(dados.adhab)) > 0) html += `<tr><td>Adicional de Habilitação</td><td class="val text-success">${dados.adhab}</td></tr>`;
+            if(Math.abs(parseMoeda(dados.addisp)) > 0) html += `<tr><td>Adicional de Disponibilidade</td><td class="val text-success">${dados.addisp}</td></tr>`;
+            if(Math.abs(parseMoeda(dados.org)) > 0) html += `<tr><td>Compensação Orgânica</td><td class="val text-success">${dados.org}</td></tr>`;
+            if(Math.abs(parseMoeda(dados.natalino)) > 0) html += `<tr><td>Adicional Natalino (13º)</td><td class="val text-success">${dados.natalino}</td></tr>`;
+            if(Math.abs(parseMoeda(dados.ferias)) > 0) html += `<tr><td>Adicional de Férias (1/3)</td><td class="val text-success">${dados.ferias}</td></tr>`;
+            if(Math.abs(parseMoeda(dados.outros)) > 0) html += `<tr><td>Gratificações / Auxílios / Comandos</td><td class="val text-success">${dados.outros}</td></tr>`;
+            if(Math.abs(parseMoeda(dados.restit)) > 0) html += `<tr><td>Restituição de Teto do FUSMA</td><td class="val text-success">${dados.restit}</td></tr>`;
+            html += `</tbody></table>`;
+            
+            html += `<div class="print-section-title">Descontos e Obrigações</div>`;
+            html += `<table class="print-table"><thead><tr><th>Natureza do Desconto</th><th>Valor Retido</th></tr></thead><tbody>`;
+            
+            html += `<tr><td>Contribuição para Pensão Militar (10,5%)</td><td class="val text-danger">${dados.pensao}</td></tr>`;
+            html += `<tr><td>FUSMA - Contribuição do Titular (1,8%)</td><td class="val text-danger">${dados.fusma_tit}</td></tr>`;
+            
+            if(Math.abs(parseMoeda(dados.cota_pre_escolar)) > 0) html += `<tr><td>Cota-Parte Pré-Escolar</td><td class="val text-danger">${dados.cota_pre_escolar}</td></tr>`;
+            if(Math.abs(parseMoeda(dados.fusma_dir)) > 0) html += `<tr><td>FUSMA - Dependentes Diretos</td><td class="val text-danger">${dados.fusma_dir}</td></tr>`;
+            if(Math.abs(parseMoeda(dados.fusma_ind)) > 0) html += `<tr><td>FUSMA - Dependentes Indiretos</td><td class="val text-danger">${dados.fusma_ind}</td></tr>`;
+            if(Math.abs(parseMoeda(dados.saude)) > 0) html += `<tr><td>Coparticipação de Saúde / Exames / Ambulatório</td><td class="val text-danger">${dados.saude}</td></tr>`;
+            if(Math.abs(parseMoeda(dados.transporte)) > 0) html += `<tr><td>Desconto de Transporte em Bilhete</td><td class="val text-danger">${dados.transporte}</td></tr>`;
+            if(Math.abs(parseMoeda(dados.pensao_al)) > 0) html += `<tr><td>Pensão Alimentícia Judicial Retida</td><td class="val text-danger">${dados.pensao_al}</td></tr>`;
+            if(Math.abs(parseMoeda(dados.emprestimos)) > 0) html += `<tr><td>Empréstimos / Seguros / Consignados Gerais</td><td class="val text-danger">${dados.emprestimos}</td></tr>`;
+            
+            html += `<tr><td>Imposto de Renda Retido na Fonte (IRPF)</td><td class="val text-danger">${dados.irpf}</td></tr>`;
+            html += `</tbody></table>`;
+            
+            html += `<div class="print-footer-total pos"><span>LÍQUIDO ESTIMADO RECEBIDO:</span><span>${dados.liquido}</span></div>`;
+            
+        } else if (tipo === 'orcamento') {
+            html += `<div class="print-header"><h1>Planejamento Financeiro Mensal</h1><p>Extrato Analítico do Orçamento Mensal — Emitido em ${dataGeracao}</p></div>`;
+            html += `<div class="print-meta"><div><strong>Origem das Receitas:</strong> Salário Base Militar + Extras</div><div><strong>Período de Referência:</strong> ${periodoRef}</div></div>`;
+            
+            html += `<div class="print-section-title">Fluxo de Entradas (Receitas)</div>`;
+            html += `<table class="print-table"><thead><tr><th>Fonte da Receita</th><th>Valor da Entrada</th></tr></thead><tbody>`;
+            html += `<tr><td>Remuneração Líquida Calculada (Salário BP)</td><td class="val text-success">${dados.salarioBP}</td></tr>`;
+            
+            if (dados.receitasExtras && dados.receitasExtras.length > 0) {
+                dados.receitasExtras.forEach(item => {
+                    html += `<tr><td>${item.label}</td><td class="val text-success">${item.valor}</td></tr>`;
+                });
+            }
+            html += `</tbody></table>`;
+            
+            html += `<div class="print-section-title">Fluxo de Saídas (Despesas)</div>`;
+            html += `<table class="print-table"><thead><tr><th>Categoria do Gasto</th><th>Valor Liquidado</th></tr></thead><tbody>`;
+            
+            if (dados.despesas && dados.despesas.length > 0) {
+                dados.despesas.forEach(item => {
+                    html += `<tr><td>${item.label}</td><td class="val text-danger">- ${item.valor}</td></tr>`;
+                });
+            } else {
+                 html += `<tr><td colspan="2" style="text-align:center; color:#94a3b8;">Nenhuma despesa lançada neste mês.</td></tr>`;
+            }
+            html += `</tbody></table>`;
+            
+            let vSaldo = parseMoeda(dados.saldoFinal);
+            let classeTotal = vSaldo >= 0 ? 'pos' : 'neg';
+            html += `<div class="print-footer-total ${classeTotal}"><span>SALDO RESTANTE NO MÊS:</span><span>${dados.saldoFinal}</span></div>`;
+        }
+        return html;
+    }
+
+    function baixarRelatorioSalvo(id) {
+        let historico = JSON.parse(localStorage.getItem('bp_offline_historico_json_v22')) || [];
+        let r = historico.find(x => x.id === id);
+        if(!r) return;
+
+        const printZone = document.getElementById('printZone');
+        printZone.innerHTML = buildPrintHTML(r.tipo, r.periodo, r.dataGeracao, r.dadosCalculados); 
+        
+        const tituloAntigo = document.title;
+        document.title = r.nomeArquivo || "Relatorio_Salvo";
+
+        setTimeout(() => {
+            window.print();
+            setTimeout(() => { document.title = tituloAntigo; }, 2000);
+        }, 500);
+    }
+
+    // SCROLL LATERAL NATIVO LIVRE WIZARD
+    track.addEventListener('scroll', () => {
+        let index = Math.round(track.scrollLeft / track.clientWidth);
+        if(index !== currentPage) {
+            currentPage = index;
+            updateUI();
+        }
+    }, { passive: true });
+
+    function updateUI() {
+        const dots = document.querySelectorAll('.progress-dots:not(.inst-dot) .dot:not(.inst-dot)');
+        dots.forEach((dot, idx) => {
+            if(idx === currentPage) dot.classList.add('active');
+            else dot.classList.remove('active');
+        });
+
+        if (currentPage === totalPages - 1) {
+            btnNext.innerHTML = "Início";
+        } else {
+            btnNext.innerHTML = "Avançar";
+        }
+    }
+
+    function changePage(direction) {
+        let target = currentPage + direction;
+        if (target >= totalPages) target = 0;
+        if (target < 0) target = totalPages - 1;
+        
+        track.scrollTo({
+            left: target * track.clientWidth,
+            behavior: 'smooth'
+        });
+    }
+
+    function limparIR() { 
+        const el = document.getElementById('ir_manual');
+        el.value = ''; 
+        calcular(); 
+        applyColorCoding(el);
+    }
+
+    function abrirModalPDF(tipo) {
+        tipoRelatorioAtual = tipo;
+        const hoje = new Date();
+        let dia = hoje.getDate();
+        let mesAlvoIndex = hoje.getMonth();
+        let anoAlvo = hoje.getFullYear();
+        
+        if (dia >= 18) {
+            mesAlvoIndex++;
+            if (mesAlvoIndex > 11) { mesAlvoIndex = 0; anoAlvo++; }
+        }
+        
+        const modalAno = document.getElementById('modalAno');
+        modalAno.innerHTML = ''; 
+        for(let i = 2021; i <= 2031; i++) {
+            let opt = document.createElement('option');
+            opt.value = i; opt.innerText = i;
+            if(i === anoAlvo) opt.selected = true;
+            modalAno.appendChild(opt);
+        }
+        
+        const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+        document.getElementById('modalMes').value = meses[mesAlvoIndex];
+        document.getElementById('modalPDF').style.display = 'flex';
+    }
+
+    function fecharModalPDF() { document.getElementById('modalPDF').style.display = 'none'; }
+
+    function confirmarPDF() {
+        fecharModalPDF();
+        
+        calcular(); 
+        calcularOrcamento();
+
+        const printZone = document.getElementById('printZone');
+        const mesSelecionado = document.getElementById('modalMes').value;
+        const anoSelecionado = document.getElementById('modalAno').value;
+        const periodoStr = `${mesSelecionado}/${anoSelecionado}`;
+        const mesMinusc = mesSelecionado.toLowerCase();
+        let novoNome = '';
+        const dataAtual = new Date().toLocaleDateString('pt-BR');
+        
+        if (tipoRelatorioAtual === 'bp') novoNome = `Relatório BP ${mesMinusc} - ${anoSelecionado}`;
+        else novoNome = `Orçamento mensal ${mesMinusc} - ${anoSelecionado}`;
+
+        // LÓGICA DE COLETA BLINDADA (Compatível com labels renomeadas)
+        let dadosAgrupados = {};
+        if (tipoRelatorioAtual === 'bp') {
+            const elPosto = document.getElementById('posto');
+            dadosAgrupados = {
+                posto: elPosto.options[elPosto.selectedIndex]?.text || "Não Informado",
+                soldo: document.getElementById('res_soldo').innerText,
+                admil: document.getElementById('res_admil').innerText,
+                adhab: document.getElementById('res_adhab').innerText,
+                addisp: document.getElementById('res_addisp').innerText,
+                org: document.getElementById('res_org').innerText,
+                natalino: document.getElementById('res_natalino').innerText,
+                ferias: document.getElementById('res_ferias').innerText,
+                outros: document.getElementById('res_outros').innerText,
+                restit: document.getElementById('res_fusma_restit').innerText,
+                pensao: document.getElementById('res_pensao').innerText,
+                fusma_tit: document.getElementById('res_fusma_tit').innerText,
+                cota_pre_escolar: document.getElementById('res_cota_pre_escolar').innerText,
+                fusma_dir: document.getElementById('res_fusma_dir').innerText,
+                fusma_ind: document.getElementById('res_fusma_ind').innerText,
+                saude: document.getElementById('res_saude').innerText,
+                transporte: document.getElementById('res_desc_transporte_card').innerText,
+                pensao_al: document.getElementById('res_pensao_al').innerText,
+                emprestimos: document.getElementById('res_emprestimos').innerText,
+                irpf: document.getElementById('res_irpf').innerHTML.split('<')[0].trim(),
+                liquido: document.getElementById('res_liquido').innerText
+            };
+        } else {
+            dadosAgrupados = {
+                salarioBP: document.getElementById('orc_res_bp').innerText,
+                saldoFinal: document.getElementById('orc_saldo_final').innerText,
+                receitasExtras: [],
+                despesas: []
+            };
+            
+            // Varre as Rendas
+            document.querySelectorAll('.orc-receita').forEach(i => {
+                let val = parseMoeda(i.value);
+                if(val > 0) {
+                    dadosAgrupados.receitasExtras.push({ label: i.previousElementSibling.innerText, valor: formatarMoeda(val) });
+                }
+            });
+            
+            // Varre as Despesas
+            document.querySelectorAll('.orc-despesa').forEach(i => {
+                let val = parseMoeda(i.value);
+                if(val > 0) {
+                    dadosAgrupados.despesas.push({ label: i.previousElementSibling.innerText, valor: formatarMoeda(val) });
+                }
+            });
+        }
+
+        printZone.innerHTML = buildPrintHTML(tipoRelatorioAtual, periodoStr, dataAtual, dadosAgrupados);
+
+        const relatorioSnapshot = {
+            id: Date.now(),
+            tipo: tipoRelatorioAtual,
+            periodo: periodoStr,
+            dataGeracao: dataAtual,
+            nomeArquivo: novoNome,
+            dadosCalculados: dadosAgrupados
+        };
+        let historico = JSON.parse(localStorage.getItem('bp_offline_historico_json_v22')) || [];
+        historico.push(relatorioSnapshot);
+        localStorage.setItem('bp_offline_historico_json_v22', JSON.stringify(historico));
+
+        const tituloAntigo = document.title;
+        document.title = novoNome;
+        
+        setTimeout(() => {
+            window.print();
+            setTimeout(() => { document.title = tituloAntigo; }, 2000);
+        }, 500);
+    }
+
+    const tabelaPostos = {
+        'AE':  { soldo: 13471.00, adMil: 0.28, adDisp: 0.41 }, 'VA':  { soldo: 12912.00, adMil: 0.28, adDisp: 0.38 },
+        'CA':  { soldo: 12490.00, adMil: 0.28, adDisp: 0.35 }, 'CMG': { soldo: 12505.00, adMil: 0.25, adDisp: 0.32 },
+        'CF':  { soldo: 12285.00, adMil: 0.25, adDisp: 0.26 }, 'CC':  { soldo: 12108.00, adMil: 0.25, adDisp: 0.20 },
+        'CT':  { soldo: 9976.00,  adMil: 0.22, adDisp: 0.12 }, '1º TEN':  { soldo: 9004.00,  adMil: 0.19, adDisp: 0.06 },
+        '2º TEN':  { soldo: 8179.00,  adMil: 0.19, adDisp: 0.05 }, 'GM':  { soldo: 7988.00,  adMil: 0.19, adDisp: 0.05 },
+        'SO':  { soldo: 6737.00,  adMil: 0.16, adDisp: 0.32 }, '1º SG': { soldo: 5988.00,  adMil: 0.16, adDisp: 0.20 },
+        '2º SG': { soldo: 5209.00,  adMil: 0.16, adDisp: 0.12 }, '3º SG': { soldo: 4177.00,  adMil: 0.16, adDisp: 0.06 }, 
+        'CB':  { soldo: 2869.00,  adMil: 0.13, adDisp: 0.06 }, 'MN':  { soldo: 2103.00,  adMil: 0.13, adDisp: 0.05 }
+    };
+
+    function formatarMoeda(v) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+    function truncar(v) { return Math.floor(v * 100) / 100; }
+    
+    function parseMoeda(s) { 
+        if (!s) return 0;
+        let str = s.toString();
+        let isNegative = str.includes('-');
+        let limpo = str.replace(/[^\d,]/g, '');
+        if (!limpo) return 0;
+        limpo = limpo.replace(',', '.');
+        let val = parseFloat(limpo) || 0;
+        return isNegative ? -val : val;
+    }
+
+    function aplicarMascara(input) {
+        let v = input.value.replace(/\D/g, '');
+        
+        if (v === '' || parseInt(v, 10) === 0) { 
+            input.value = ''; 
+            return; 
+        }
+
+        v = (parseInt(v, 10) / 100).toFixed(2).replace('.', ',').replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
+        input.value = v;
+    }
+
+    function applyColorCoding(el) {
+        if (!el.hasAttribute('data-color')) return;
+        
+        let val = el.value ? el.value.trim() : "";
+        let isZero = false;
+
+        if (val === "" || val === "0" || val === "0.00" || val === "0,00" || val === "0.0" || val === "NaN") {
+            isZero = true;
+        }
+
+        if (el.classList.contains('dinheiro') || el.classList.contains('dinheiro_opcional')) {
+            let numVal = parseMoeda(val);
+            if (numVal === 0) isZero = true;
+        }
+
+        if (isZero) {
+            el.classList.add('is-zero');
+            el.classList.remove('active-azul', 'active-vermelho', 'active-verde');
+        } else {
+            el.classList.remove('is-zero');
+            let colorType = el.getAttribute('data-color');
+            if (colorType === 'azul') el.classList.add('active-azul');
+            if (colorType === 'vermelho') el.classList.add('active-vermelho');
+            if (colorType === 'verde') el.classList.add('active-verde');
+        }
+    }
+
+    document.querySelectorAll('.dinheiro, .dinheiro_opcional').forEach(i => {
+        i.addEventListener('input', e => { 
+            aplicarMascara(e.target); 
+            if (e.target.classList.contains('orc-receita') || e.target.classList.contains('orc-despesa')) calcularOrcamento();
+            else calcular(); 
+            applyColorCoding(e.target);
+        });
+    });
+
+    document.querySelectorAll('select, input:not(.dinheiro)').forEach(i => {
+        i.addEventListener('input', (e) => {
+            calcular();
+            applyColorCoding(i);
+        });
+    });
+
+    document.getElementById('posto').addEventListener('change', function() {
+        const org = document.getElementById('organica_posto'), disp = document.getElementById('disponibilidade'), hab = document.getElementById('habilitacao');
+        if (this.value && org) org.value = this.value; 
+        if (this.value && disp) disp.value = tabelaPostos[this.value].adDisp.toFixed(2);
+        if (this.value && !hab.value) hab.value = "0.00";
+        calcular();
+        applyColorCoding(org);
+        applyColorCoding(disp);
+        applyColorCoding(hab);
+    });
+
+    function calcularOrcamento() {
+        let somaExtras = 0; document.querySelectorAll('.orc-receita').forEach(i => somaExtras += parseMoeda(i.value));
+        let somaDespesas = 0; document.querySelectorAll('.orc-despesa').forEach(i => somaDespesas += parseMoeda(i.value));
+        
+        let m1 = parseMoeda(document.getElementById('orc_aluguel').value) + parseMoeda(document.getElementById('orc_condominio').value) + parseMoeda(document.getElementById('orc_agua').value) + parseMoeda(document.getElementById('orc_luz').value) + parseMoeda(document.getElementById('orc_internet').value) + parseMoeda(document.getElementById('orc_celular').value) + parseMoeda(document.getElementById('orc_mercado').value) + parseMoeda(document.getElementById('orc_doacoes').value);
+        let m2 = parseMoeda(document.getElementById('orc_combustivel').value) + parseMoeda(document.getElementById('orc_manutencao').value) + parseMoeda(document.getElementById('orc_seg_auto').value) + parseMoeda(document.getElementById('orc_parc_carro').value);
+        let m3 = parseMoeda(document.getElementById('orc_plano_saude').value) + parseMoeda(document.getElementById('orc_farmacia').value) + parseMoeda(document.getElementById('orc_escola').value) + parseMoeda(document.getElementById('orc_faculdade').value) + parseMoeda(document.getElementById('orc_academia').value) + parseMoeda(document.getElementById('orc_seg_vida').value);
+        let m4 = parseMoeda(document.getElementById('orc_padaria').value) + parseMoeda(document.getElementById('orc_pet').value) + parseMoeda(document.getElementById('orc_roupas').value) + parseMoeda(document.getElementById('orc_ifood').value) + parseMoeda(document.getElementById('orc_saidas').value) + parseMoeda(document.getElementById('orc_cartao').value) + parseMoeda(document.getElementById('orc_poupanca').value) + parseMoeda(document.getElementById('orc_outros').value);
+
+        let receitaTotal = salarioLiquidoBP + somaExtras;
+        let saldoFinal = receitaTotal - somaDespesas;
+
+        document.getElementById('orc_res_bp').innerText = formatarMoeda(salarioLiquidoBP);
+        document.getElementById('orc_res_extras').innerText = formatarMoeda(somaExtras);
+        
+        document.getElementById('orc_res_moradia').innerText = formatarMoeda(m1);
+        document.getElementById('orc_res_transporte').innerText = formatarMoeda(m2);
+        document.getElementById('orc_res_saude_edu').innerText = formatarMoeda(m3);
+        document.getElementById('orc_res_lazer').innerText = formatarMoeda(m4);
+
+        document.getElementById('orc_res_receita').innerText = formatarMoeda(receitaTotal);
+        document.getElementById('orc_res_despesa').innerText = '- ' + formatarMoeda(somaDespesas);
+        document.getElementById('orc_saldo_final').innerText = formatarMoeda(saldoFinal);
+
+        const caixaSaldo = document.getElementById('caixa_saldo_final');
+        if (saldoFinal < 0) caixaSaldo.classList.add('negativo'); else caixaSaldo.classList.remove('negativo');
+        
+        // --- LÓGICA DO DASHBOARD VISUAL (BARRA E GRÁFICO) ---
+        let percGasto = receitaTotal > 0 ? (somaDespesas / receitaTotal) * 100 : 0;
+        
+        // 1. Barra de Consumo
+        const bar = document.getElementById('bar_consumo');
+        const lblStatus = document.getElementById('lbl_status_consumo');
+        let widthBar = percGasto > 100 ? 100 : percGasto;
+        bar.style.width = widthBar + '%';
+        
+        if (percGasto < 60) { 
+            bar.style.background = '#16a34a'; lblStatus.innerText = 'Saudável'; lblStatus.style.color = '#16a34a'; 
+        } else if (percGasto < 85) { 
+            bar.style.background = '#eab308'; lblStatus.innerText = 'Atenção'; lblStatus.style.color = '#eab308'; 
+        } else { 
+            bar.style.background = '#dc2626'; lblStatus.innerText = 'Crítico'; lblStatus.style.color = '#dc2626'; 
+        }
+        
+        document.getElementById('perc_gasto').innerText = Math.round(percGasto) + '%';
+
+        // 2. Gráfico CSS de Pizza/Donut
+        let valInvestimentos = parseMoeda(document.getElementById('orc_poupanca').value);
+        let valDespesas = somaDespesas - valInvestimentos; 
+        let valSaldoLivre = saldoFinal > 0 ? saldoFinal : 0;
+        
+        let totalPie = valDespesas + valInvestimentos + valSaldoLivre;
+        
+        if (totalPie === 0) {
+             document.getElementById('orc_chart').style.background = 'conic-gradient(rgba(0,0,0,0.05) 0 100%)';
+        } else {
+             let degDesp = (valDespesas / totalPie) * 360;
+             let degInv = degDesp + ((valInvestimentos / totalPie) * 360);
+             
+             document.getElementById('orc_chart').style.background = `conic-gradient(
+                #ef4444 0deg ${degDesp}deg, 
+                #3b82f6 ${degDesp}deg ${degInv}deg, 
+                #10b981 ${degInv}deg 360deg
+             )`;
+        }
+        // --- FIM DASHBOARD ---
+
+        salvarDadosLocais(); 
+    }
+
+    function calcular() {
+        calcularOrcamento(); 
+        salvarDadosLocais(); 
+
+        const pk = document.getElementById('posto').value;
+        const hR = document.getElementById('habilitacao').value;
+        const dR = document.getElementById('disponibilidade').value;
+        
+        if (!pk || hR === "" || dR === "") return;
+
+        const hP = parseFloat(hR), dP = parseFloat(dR), oP = parseFloat(document.getElementById('organica_perc').value) || 0;
+        const opK = document.getElementById('organica_posto').value || pk;
+        const repD = parseInt(document.getElementById('repvip_dias').value) || 0, cP = parseFloat(document.getElementById('comando_perc').value) || 0;
+        const paP = parseFloat(document.getElementById('pensao_alimenticia').value) || 0, nOpt = document.getElementById('natalino_opt').value, fOpt = document.getElementById('ferias_opt').value;
+        
+        const percAlfa = parseFloat(document.getElementById('area_alfa').value) || 0;
+        const vAlim = parseMoeda(document.getElementById('alimentacao').value);
+        const vAuxTransp = parseMoeda(document.getElementById('aux_transporte').value);
+        const vAdEx = parseMoeda(document.getElementById('adicionais_extra').value);
+        const vAdTr = parseMoeda(document.getElementById('adicionais_trib').value);
+        const vSau = parseMoeda(document.getElementById('desconto_saude').value);
+        const vDescTransp = parseMoeda(document.getElementById('desc_transporte').value);
+        const vEmp = parseMoeda(document.getElementById('emp1').value) + parseMoeda(document.getElementById('emp2').value) + parseMoeda(document.getElementById('emp3').value) + parseMoeda(document.getElementById('emp4').value);
+        
+        const irMan = document.getElementById('ir_manual').value;
+        const dDir = parseInt(document.getElementById('dep_dir').value) || 0, dInd = parseInt(document.getElementById('dep_indir').value) || 0, qPE = parseInt(document.getElementById('pre_escolar_qtd').value) || 0;
+
+        const dPrip = tabelaPostos[pk];
+        const sPrip = dPrip.soldo;
+        const sOrg = (tabelaPostos[opK] || dPrip).soldo;
+
+        const vAdM = truncar(sPrip * dPrip.adMil), vAdD = truncar(sPrip * dP), vAdH = truncar(sPrip * hP), vOrg = truncar(sOrg * oP);
+        const vRep = truncar(sPrip * 0.02 * repD), vCom = truncar(sPrip * cP), vPE = truncar(qPE * 526.64);
+        const vAlfa = truncar(sPrip * percAlfa);
+
+        // CÁLCULO INTELIGENTE DA COTA-PARTE DO PRÉ-ESCOLAR ATRELADO AO SOLDO DE MARINHEIRO
+        const valorBasePreEscolar = tabelaPostos['MN'].soldo; 
+        const bFus = sPrip + vAdM + vAdD + vAdH + vOrg; 
+        let percCota = 0.05;
+        
+        if (bFus > valorBasePreEscolar * 20) percCota = 0.25;
+        else if (bFus > valorBasePreEscolar * 15) percCota = 0.20;
+        else if (bFus > valorBasePreEscolar * 10) percCota = 0.15;
+        else if (bFus > valorBasePreEscolar * 5) percCota = 0.10;
+        
+        const vCotaPreEscolar = truncar(vPE * percCota);
+
+        const pMil = truncar(bFus * 0.105), fTit = truncar(bFus * 0.018), fDir = truncar(bFus * 0.003 * dDir), fInd = truncar(bFus * 0.012 * dInd);
+        const tFus = fTit + fDir + fInd, tetFus = truncar(bFus * 0.035);
+        let vFRes = 0; if (tFus > tetFus) vFRes = truncar(tFus - tetFus);
+
+        let vNat = 0, bNatT = 0; 
+        if (nOpt === '100') { vNat = bFus; bNatT = bFus; } 
+        else if (nOpt === '50_dez') { vNat = truncar(bFus * 0.5); bNatT = bFus; } 
+        else if (nOpt === '50_exc') { vNat = truncar(bFus * 0.5); bNatT = 0; } 
+
+        let vFer = 0; if (fOpt === '1/3') vFer = truncar(bFus / 3);
+
+        const bTribN = bFus + vRep + vCom + vAdTr + vAlfa;
+        const tBru = bTribN + vFer + vAlim + vAuxTransp + vPE + vNat + vAdEx + vFRes;
+        const dMil = pMil + tFus + vSau;
+        const sLiq = tBru - dMil;
+        const vPA = truncar(sLiq * paP);
+
+        const rMenIR = bTribN + vFRes, dDep = truncar((dDir + dInd) * 189.59);
+        const dMen = pMil + tFus + dDep + vPA, dApM = Math.max(dMen, 607.20);
+        let bIrpf = rMenIR - dApM, irMen = 0;
+
+        if (rMenIR > 5000) {
+            if (bIrpf > 4664.68) irMen = truncar((bIrpf * 0.275) - 908.73);
+            else if (bIrpf > 3751.05) irMen = truncar((bIrpf * 0.225) - 675.49);
+            else if (bIrpf > 2826.65) irMen = truncar((bIrpf * 0.15) - 394.16);
+            else if (bIrpf > 2428.80) irMen = truncar((bIrpf * 0.075) - 182.16);
+            if (irMen < 0) irMen = 0;
+            if (rMenIR <= 7350) { let red = truncar(978.62 - truncar(0.133145 * rMenIR)); if (red > 0) irMen = Math.max(0, truncar(irMen - red)); }
+        }
+
+        let ir13 = 0;
+        if (bNatT > 5000) {
+            let dAp13 = Math.max(dDep, 607.20), bIrpf13 = bNatT - dAp13;
+            if (bIrpf13 > 4664.68) ir13 = truncar((bIrpf13 * 0.275) - 908.73);
+            else if (bIrpf13 > 3751.05) ir13 = truncar((bIrpf13 * 0.225) - 675.49);
+            else if (bIrpf13 > 2826.65) ir13 = truncar((bIrpf13 * 0.15) - 394.16);
+            else if (bIrpf13 > 2428.80) ir13 = truncar((bIrpf13 * 0.075) - 182.16);
+            if (ir13 < 0) ir13 = 0;
+            if (bNatT <= 7350) { let red13 = truncar(978.62 - truncar(0.133145 * bNatT)); if (red13 > 0) ir13 = Math.max(0, truncar(ir13 - red13)); }
+        }
+
+        let irTot = irMan !== "" ? parseMoeda(irMan) : irMen + ir13;
+        const tLiq = sLiq - vDescTransp - vEmp - irTot - vPA - vCotaPreEscolar;
+        
+        salarioLiquidoBP = tLiq; 
+
+        document.getElementById('res_soldo').innerText = formatarMoeda(sPrip);
+        document.getElementById('res_admil').innerText = formatarMoeda(vAdM);
+        document.getElementById('res_adhab').innerText = formatarMoeda(vAdH);
+        document.getElementById('res_addisp').innerText = formatarMoeda(vAdD);
+        document.getElementById('res_org').innerText = formatarMoeda(vOrg);
+        
+        document.getElementById('res_natalino').innerText = formatarMoeda(vNat);
+        document.getElementById('res_ferias').innerText = formatarMoeda(vFer);
+        document.getElementById('res_outros').innerText = formatarMoeda(vRep + vCom + vAlfa + vAdTr + vAlim + vPE + vAuxTransp + vAdEx);
+        document.getElementById('res_fusma_restit').innerText = formatarMoeda(vFRes);
+        
+        document.getElementById('res_pensao').innerText = '- ' + formatarMoeda(pMil);
+        document.getElementById('res_fusma_tit').innerText = '- ' + formatarMoeda(fTit);
+        document.getElementById('res_cota_pre_escolar').innerText = '- ' + formatarMoeda(vCotaPreEscolar);
+        document.getElementById('res_fusma_dir').innerText = '- ' + formatarMoeda(fDir);
+        document.getElementById('res_fusma_ind').innerText = '- ' + formatarMoeda(fInd);
+        document.getElementById('res_saude').innerText = '- ' + formatarMoeda(vSau);
+        document.getElementById('res_desc_transporte_card').innerText = '- ' + formatarMoeda(vDescTransp);
+        
+        document.getElementById('res_bruto').innerText = formatarMoeda(tBru);
+        document.getElementById('res_subtotal').innerText = formatarMoeda(sLiq);
+        
+        document.getElementById('res_pensao_al').innerText = '- ' + formatarMoeda(vPA);
+        document.getElementById('res_emprestimos').innerText = '- ' + formatarMoeda(vEmp);
+        
+        let txIr = '- ' + formatarMoeda(irTot);
+        if (irMan !== "") txIr += ' <span style="color:#b91c1c; font-weight:900;">[MANUAL]</span>';
+        if (dDep > 0) txIr += `<br><span style="font-size:0.65rem; color:var(--muted-text); font-weight:normal;">Ded. Dep: -${formatarMoeda(dDep)}</span>`;
+        document.getElementById('res_irpf').innerHTML = txIr;
+        
+        document.getElementById('res_liquido').innerText = formatarMoeda(tLiq);
+
+        document.getElementById('box_fusma_restit').style.display = vFRes > 0 ? 'flex' : 'none';
+        document.getElementById('box_cota_pre_escolar').style.display = vCotaPreEscolar > 0 ? 'flex' : 'none';
+        document.getElementById('box_fusma_dir').style.display = fDir > 0 ? 'flex' : 'none';
+        document.getElementById('box_fusma_ind').style.display = fInd > 0 ? 'flex' : 'none';
+        document.getElementById('box_saude').style.display = vSau > 0 ? 'flex' : 'none';
+        document.getElementById('box_transporte').style.display = vDescTransp > 0 ? 'flex' : 'none';
+        document.getElementById('linha_pensao_al').style.display = vPA > 0 ? 'flex' : 'none';
+        
+        document.getElementById('badge_teto_fusma').style.display = vFRes > 0 ? 'inline-block' : 'none';
+
+        calcularOrcamento(); 
+    }
+
+    carregarDadosLocais();
+    document.querySelectorAll('[data-color]').forEach(el => applyColorCoding(el));
+    updateUI();
+</script>
+
+</body>
+</html>
